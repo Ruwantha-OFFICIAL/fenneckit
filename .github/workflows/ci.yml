@@ -18,6 +18,7 @@ jobs:
          npm install
          npm run build
          cp package.json fenneckit.png README.md LICENSE ./dist
+         cp -r src/bin ./dist
          
         
       - run: |
