@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-require('../lib/fenneckit.js')
+import '../libs/fenneckit.js'

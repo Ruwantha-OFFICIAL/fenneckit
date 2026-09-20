@@ -4,10 +4,13 @@
 
 ```bash 
 npm install fenneckit@latest --save-dev
+npx fenneckit --help
 ```
 **English**: A Complete Storage System for Practical and Seamless Data Analysis
 
 **Zero Config** • Sequential Labs • Inter-Lab Data Sharing (within the same file) • Store Management
+
+**🦊Example** : soon
 
 ---
 

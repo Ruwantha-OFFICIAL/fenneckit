@@ -64,7 +64,7 @@ Usage:
         return;
     }
     if (args.includes("--version") || args.includes("-v")) {
-        console.log("FennecKit 🦊 v1.1.0-beta");
+        console.log("FennecKit 🦊 v1.0.4");
         return;
     }
 
