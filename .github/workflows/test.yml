@@ -1,4 +1,4 @@
-name: test code
+name: test FennecKit
 
 on:
   push:
@@ -14,21 +14,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
-      - name: install npm 🥪
+      - name: Install dependencies 🥪
         run: npm install
 
-      - name: test & chek codes 🚧
+      - name: Test & check codes 🚧
         run: |
-         npm run eslint 
-         npm run test
+          npm run eslint
+          npm run test
 
-      - name: upload testing report
-        uses: actions/upload-artifact@v7
+      - name: Upload testing report
+        uses: actions/upload-artifact@v4
         with:
-          name: repot
+          name: report
           path: ./test/fenneckit.md
