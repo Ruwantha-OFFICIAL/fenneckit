@@ -1,0 +1,52 @@
+{
+  "name": "fenneckit",
+  "version": "1.0.0-beta",
+  "description": "A tiny, fast & adorable testing kit. Lightweight test framework with zero config – easy to hold, easy to run.",
+  "keywords": [
+    "testing",
+    "test",
+    "libray",
+    "esay",
+    "poupler",
+    "fenneckit",
+    "vtest",
+    "developer",
+    "tyne",
+    "units",
+    "labs",
+    "lab",
+    "lab-test"
+  ],
+  "homepage": "https://github.com/Ruwantha-OFFICIAL/fenneckit#readme",
+  "bugs": {
+    "url": "https://github.com/Ruwantha-OFFICIAL/fenneckit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ruwantha-OFFICIAL/fenneckit.git"
+  },
+  "license": "MIT",
+  "author": "lasith ruwantha amrwansha",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "eslint": "eslint .",
+    "build": "tsc",
+    "test": "cd test && node ../dist/libs/fenneckit.js"
+  },
+  "dependencies": {
+    "chalk": "^6.0.0",
+    "fs-extra": "^11.4.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.3",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
+    "jiti": "^2.7.0",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.0"
+  }
+}

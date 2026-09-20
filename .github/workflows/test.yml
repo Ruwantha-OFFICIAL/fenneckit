@@ -1,0 +1,34 @@
+name: test code
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "src/**/*"
+  pull_request:
+    branches: ["master"]
+    paths:
+      - "src/**/*"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: install npm 🥪
+        run: npm install
+
+      - name: test & chek codes 🚧
+      - run: |
+         npm run eslint 
+         npm run test
+
+      - name: upload testing report
+        uses: actions/upload-artifact@v7
+        with:
+          name: repot
+          path: ./test/fenneckit.md
