@@ -577,7 +577,7 @@ npx fenneckit
 
 ## 📝 Version History
 
-### v1.1.0 (Current)
+### v1.0.0-beta (Current)
 - ✨ Added `clearStore()` for store management
 - 🌳 Improved data sharing hierarchy documentation
 - 🧹 Better state cleanup capabilities
