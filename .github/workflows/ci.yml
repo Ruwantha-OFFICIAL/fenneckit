@@ -20,6 +20,8 @@ jobs:
          cp package.json fenneckit.png README.md LICENSE ./dist
          
         
-      - run: npm publish
+      - run: |
+         cd dist
+         npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
