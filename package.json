@@ -1,6 +1,6 @@
 {
   "name": "fenneckit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A tiny, fast & adorable testing kit. Lightweight test framework with zero config – easy to hold, easy to run.",
   "keywords": [
     "testing",
