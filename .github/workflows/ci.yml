@@ -22,6 +22,6 @@ jobs:
         
       - run: |
          cd dist
-         npm publish
+         npm publish --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
