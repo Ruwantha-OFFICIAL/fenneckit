@@ -1,6 +1,6 @@
 {
   "name": "fenneckit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A tiny, fast & adorable testing kit. Lightweight test framework with zero config – easy to hold, easy to run.",
   "keywords": [
     "testing",
@@ -33,6 +33,9 @@
     "eslint": "eslint .",
     "build": "tsc",
     "test": "cd test && node ../dist/libs/fenneckit.js"
+  },
+  "bin":{
+   "fenneckit": "./bin/fenneckit"
   },
   "dependencies": {
     "chalk": "^6.0.0",
