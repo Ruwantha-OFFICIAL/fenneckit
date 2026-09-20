@@ -23,7 +23,7 @@ jobs:
         run: npm install
 
       - name: test & chek codes 🚧
-      - run: |
+        run: |
          npm run eslint 
          npm run test
 
