@@ -5,10 +5,12 @@ on:
     branches: ["master"]
     paths:
       - "src/**/*"
+      - "test/**/*"
   pull_request:
     branches: ["master"]
     paths:
       - "src/**/*"
+      - "test/**/*"
 
 jobs:
   test:
@@ -26,4 +28,12 @@ jobs:
         run: npm install
 
       - name: Test & check codes 🚧
-        run: npm run eslint
+        run: |
+          npm run build
+          npm run test
+
+      - name: Upload testing report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Report_file
+          path: ./test/fenneckit.md

@@ -1,31 +1,35 @@
 /*==================================
-* FennecKit v1.2.0 - Implementation
-* Security & API Testing Features
-* ===================================*/
+* Copyright 2026 lasith ruwantha amrwansha
+* Written by 2026/09/20
+* Author: ruwantha amrwansha
+* Library: FennecKit 🦊
+*===================================*/
 
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  scryptSync,
+  type CipherGCM,
+  type DecipherGCM,
+} from "crypto";
 import { access, writeFile } from "fs/promises";
 import path from "path";
-
-// ============================================
-// 1. SECRET VAULT (AES-256 Encryption)
-// ============================================
 
 class SecretVault {
   private vault = new Map<string, Buffer>();
   private masterKey: Buffer;
-  private cipher = "aes-256-gcm";
+  private cipher = "aes-256-gcm" as const;
   private keyLength = 32;
   private ivLength = 16;
 
   constructor(password: string = "fenneckit-default") {
-    // Derive encryption key from password
     this.masterKey = scryptSync(password, "salt", this.keyLength);
   }
 
   private encrypt(data: string): { encrypted: Buffer; iv: Buffer; tag: Buffer } {
     const iv = randomBytes(this.ivLength);
-    const cipher = createCipheriv(this.cipher, this.masterKey, iv);
+    const cipher = createCipheriv(this.cipher, this.masterKey, iv) as CipherGCM;
 
     let encrypted = cipher.update(data, "utf8");
     encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -36,7 +40,7 @@ class SecretVault {
   }
 
   private decrypt(data: Buffer, iv: Buffer, tag: Buffer): string {
-    const decipher = createDecipheriv(this.cipher, this.masterKey, iv);
+    const decipher = createDecipheriv(this.cipher, this.masterKey, iv) as DecipherGCM;
     decipher.setAuthTag(tag);
 
     let decrypted = decipher.update(data);
@@ -47,7 +51,6 @@ class SecretVault {
 
   set(key: string, value: string): void {
     const { encrypted, iv, tag } = this.encrypt(value);
-    // Store as: iv + tag + encrypted (concatenated)
     const stored = Buffer.concat([iv, tag, encrypted]);
     this.vault.set(key, stored);
   }
@@ -80,10 +83,6 @@ class SecretVault {
     return Array.from(this.vault.keys());
   }
 }
-
-// ============================================
-// 2. NAMESPACED STORE
-// ============================================
 
 class NamespacedStore {
   private data = new Map<string, any>();
@@ -134,10 +133,6 @@ class NamespacedStore {
   }
 }
 
-// ============================================
-// 3. AUDIT LOG
-// ============================================
-
 interface AuditEntry {
   timestamp: string;
   lab: string;
@@ -165,15 +160,15 @@ class AuditLog {
   }
 
   filterByKey(key: string): AuditEntry[] {
-    return this.entries.filter(e => e.key === key);
+    return this.entries.filter((e) => e.key === key);
   }
 
   filterByOperation(op: AuditEntry["operation"]): AuditEntry[] {
-    return this.entries.filter(e => e.operation === op);
+    return this.entries.filter((e) => e.operation === op);
   }
 
   filterByNamespace(ns: string): AuditEntry[] {
-    return this.entries.filter(e => e.namespace === ns);
+    return this.entries.filter((e) => e.namespace === ns);
   }
 
   export(format: "json" | "csv"): string {
@@ -193,7 +188,7 @@ class AuditLog {
         "success",
       ].join(",");
 
-      const rows = this.entries.map(e =>
+      const rows = this.entries.map((e) =>
         [
           e.timestamp,
           e.lab,
@@ -217,9 +212,7 @@ class AuditLog {
   }
 }
 
-// ============================================
-// 4. HTTP KIT (API Testing)
-// ============================================
+// ====================== HTTP Kit ======================
 
 interface HttpResponse<T = any> {
   status: number;
@@ -286,7 +279,7 @@ class HttpKit {
     options: RequestOptions = {}
   ): Promise<HttpResponse> {
     const startTime = Date.now();
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = `req_\( {Date.now()}_ \){Math.random().toString(36).substr(2, 9)}`;
 
     const headers = {
       ...this.baseHeaders,
@@ -294,10 +287,15 @@ class HttpKit {
       ...(options.headers || {}),
     };
 
+    // Use AbortController for timeout (RequestInit does not support `timeout`)
+    const controller = new AbortController();
+    const timeoutMs = options.timeout ?? 30000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     const reqConfig: RequestInit = {
       method,
       headers,
-      timeout: options.timeout || 30000,
+      signal: controller.signal,
       redirect: options.followRedirects !== false ? "follow" : "manual",
     };
 
@@ -309,49 +307,52 @@ class HttpKit {
     const maxRetries = options.retry?.max || 1;
     const retryDelay = options.retry?.delay || 1000;
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const response = await fetch(url, reqConfig);
-        const duration = Date.now() - startTime;
+    try {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, reqConfig);
+          const duration = Date.now() - startTime;
 
-        let data: any = null;
-        const contentType = response.headers.get("content-type");
+          let data: any = null;
+          const contentType = response.headers.get("content-type");
 
-        if (contentType?.includes("application/json")) {
-          data = await response.json();
-        } else {
-          data = await response.text();
-        }
+          if (contentType?.includes("application/json")) {
+            data = await response.json();
+          } else {
+            data = await response.text();
+          }
 
-        const httpResponse: HttpResponse = {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          data,
-          raw: response,
-        };
+          const httpResponse: HttpResponse = {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            data,
+            raw: response,
+          };
 
-        // Record in history
-        this.recordRequest({
-          id: requestId,
-          timestamp: new Date().toISOString(),
-          method,
-          url,
-          status: response.status,
-          duration,
-          headers,
-          requestBody: body,
-          responseBody: data,
-        });
+          this.recordRequest({
+            id: requestId,
+            timestamp: new Date().toISOString(),
+            method,
+            url,
+            status: response.status,
+            duration,
+            headers,
+            requestBody: body,
+            responseBody: data,
+          });
 
-        return httpResponse;
-      } catch (error) {
-        lastError = error as Error;
+          return httpResponse;
+        } catch (error) {
+          lastError = error as Error;
 
-        if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          if (attempt < maxRetries - 1) {
+            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          }
         }
       }
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     const duration = Date.now() - startTime;
@@ -407,12 +408,9 @@ class HttpKit {
   }
 }
 
-// ============================================
-// 5. UPDATED LAB CONTEXT
-// ============================================
+// ====================== Lab Context ======================
 
 interface LabContext {
-  // Existing methods
   out: () => void;
   ret: () => void;
   flatErr: (msg: string) => void;
@@ -421,43 +419,30 @@ interface LabContext {
   log: (msg: string) => void;
   warning: (msg: string) => void;
 
-  // Store (unchanged)
   setStore: (key: string, value: any) => void;
   getStore: (key: string) => any;
   clearStore: (key?: string) => void;
 
-  // NEW: Secret Vault
   setSecret: (key: string, value: string) => void;
   getSecret: (key: string) => string | undefined;
   clearSecret: (key?: string) => void;
 
-  // NEW: Namespaces
   namespace: (name: string) => NamespacedStore;
   getNamespace: (name: string) => NamespacedStore | undefined;
 
-  // Temp (unchanged)
   setTemp: (key: string, value: any) => void;
   getTemp: (key: string) => any;
 
-  // NEW: HTTP Kit
   http: HttpKit;
-
-  // NEW: Audit Log
   audit: AuditLog;
 
-  // NEW: TTL Support
   setStoreWithTTL: (key: string, value: any, ttlMs: number) => void;
   setSecretWithTTL: (key: string, value: string, ttlMs: number) => void;
 
-  // Testing
   test: <T>(testName: string, testFn: () => T | Promise<T>) => Promise<T>;
 }
 
-// ============================================
-// 6. IMPLEMENTATION EXAMPLE
-// ============================================
-
-export async function newLabsV12(
+export async function newLabs(
   name: string,
   fn: (kit: LabContext) => void | Promise<void>,
   retCount = 0
@@ -551,7 +536,7 @@ export async function newLabsV12(
       }
     },
 
-    // NEW: Secrets
+    // Secrets
     setSecret: (key, value) => {
       logs += `[🔐] [SECRET] set "${key}"\n`;
       secretVault.set(key, value);
@@ -590,7 +575,7 @@ export async function newLabsV12(
       }
     },
 
-    // NEW: Namespaces
+    // Namespaces
     namespace: (ns) => {
       if (!namespaces.has(ns)) {
         namespaces.set(ns, new NamespacedStore(ns));
@@ -613,21 +598,16 @@ export async function newLabsV12(
       return temp.get(key);
     },
 
-    // NEW: HTTP Kit
     http,
-
-    // NEW: Audit Log
     audit,
 
-    // NEW: TTL Support
+    // TTL
     setStoreWithTTL: (key, value, ttlMs) => {
       Context.setStore(key, value);
-      
-      // Clear existing TTL if any
+
       const existingTimer = ttlMap.get(key);
       if (existingTimer) clearTimeout(existingTimer);
 
-      // Set new TTL
       const timer = setTimeout(() => {
         Store.delete(key);
         ttlMap.delete(key);
@@ -672,60 +652,21 @@ export async function newLabsV12(
     if (err.message === "__Lab_Out__") {
       logs += "```\n";
       temp.clear();
-      ttlMap.forEach(timer => clearTimeout(timer));
+      ttlMap.forEach((timer) => clearTimeout(timer));
       // Write report here
       return;
     } else if (err.message === "__Restart__") {
-      return newLabsV12(name, fn, retCount + 1);
+      // Fixed: was newLabsV12
+      return newLabs(name, fn, retCount + 1);
     }
     console.log(`❌ [Lab Failed]: ${name}\n`);
     temp.clear();
-    ttlMap.forEach(timer => clearTimeout(timer));
+    ttlMap.forEach((timer) => clearTimeout(timer));
     return;
   }
 
   logs += "```\n";
   console.log(`✅ [Lab Success]: ${name} completed successfully.\n`);
   temp.clear();
-  ttlMap.forEach(timer => clearTimeout(timer));
+  ttlMap.forEach((timer) => clearTimeout(timer));
 }
-
-// ============================================
-// 7. USAGE EXAMPLE
-// ============================================
-
-/*
-import { newLabsV12 } from "./fenneckit-v1.2.0-implementation";
-
-await newLabsV12("E-Commerce API Test", async (kit) => {
-  const user = kit.namespace("user");
-  const order = kit.namespace("order");
-
-  await kit.test("Register User", async () => {
-    const res = await kit.http.post("https://api.shop.com/auth/register", {
-      email: "test@example.com",
-      password: "secure123"
-    });
-
-    user.set("id", res.data.id);
-    user.setSecret("token", res.data.token);
-    kit.http.setAuth("bearer", res.data.token);
-
-    kit.done("User registered");
-  });
-
-  await kit.test("Create Order", async () => {
-    const res = await kit.http.post("https://api.shop.com/orders", {
-      items: [{ id: "prod_1", qty: 2 }]
-    });
-
-    order.set("id", res.data.orderId);
-    kit.done(`Order created: ${res.data.orderId}`);
-  });
-
-  await kit.test("Verify Audit Log", async () => {
-    const log = kit.audit.getLast(5);
-    kit.log(`Last 5 operations: ${log.length}`);
-  });
-});
-*/
