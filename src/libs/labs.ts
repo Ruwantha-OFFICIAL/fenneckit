@@ -13,7 +13,7 @@ import {
   type CipherGCM,
   type DecipherGCM,
 } from "crypto";
-import { access, writeFile } from "fs/promises";
+import report from "../utility/report.js"
 import path from "path";
 
 class SecretVault {
@@ -666,6 +666,7 @@ export async function newLabs(
   }
 
   logs += "```\n";
+  await report(logs);
   console.log(`✅ [Lab Success]: ${name} completed successfully.\n`);
   temp.clear();
   ttlMap.forEach((timer) => clearTimeout(timer));
