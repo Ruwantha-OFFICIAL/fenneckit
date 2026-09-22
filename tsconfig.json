@@ -2,6 +2,8 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
     "types": ["node"],
     "strict": true,
     "jsx": "react-jsx",
