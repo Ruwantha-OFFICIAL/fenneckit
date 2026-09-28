@@ -5,3 +5,7 @@
 - HTTP Kit with auth, retry, history
 - TTL support for STORE & Secrets
 - Improved LabContext API
+
+## V1.2.1 [2026/09/27]
+- clean guides
+- easy to learning 

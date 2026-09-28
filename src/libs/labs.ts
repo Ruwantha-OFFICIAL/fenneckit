@@ -15,6 +15,17 @@ import {
 } from "crypto";
 import report from "../utility/report.js"
 import path from "path";
+import type {
+  TracedRequest,
+  HttpResponse,
+  RequestOptions,
+  AuditEntry,
+  LabContext
+} from "../types.js"
+
+/*===========================
+All calass
+=============================*/
 
 class SecretVault {
   private vault = new Map<string, Buffer>();
@@ -133,17 +144,6 @@ class NamespacedStore {
   }
 }
 
-interface AuditEntry {
-  timestamp: string;
-  lab: string;
-  test: string;
-  operation: "set" | "get" | "delete" | "clear" | "setSecret" | "getSecret";
-  namespace?: string;
-  key: string;
-  dataType: string;
-  success: boolean;
-}
-
 class AuditLog {
   private entries: AuditEntry[] = [];
 
@@ -212,35 +212,7 @@ class AuditLog {
   }
 }
 
-// ====================== HTTP Kit ======================
 
-interface HttpResponse<T = any> {
-  status: number;
-  statusText: string;
-  headers: Record<string, string>;
-  data: T;
-  raw: Response;
-}
-
-interface RequestOptions {
-  headers?: Record<string, string>;
-  timeout?: number;
-  retry?: { max: number; delay: number };
-  followRedirects?: boolean;
-}
-
-interface TracedRequest {
-  id: string;
-  timestamp: string;
-  method: string;
-  url: string;
-  status: number;
-  duration: number;
-  headers: Record<string, string>;
-  requestBody?: any;
-  responseBody?: any;
-  error?: string;
-}
 
 class HttpKit {
   private authHeader: { type: string; value: string } | null = null;
@@ -410,37 +382,6 @@ class HttpKit {
 
 // ====================== Lab Context ======================
 
-interface LabContext {
-  out: () => void;
-  ret: () => void;
-  flatErr: (msg: string) => void;
-  err: (msg: string) => void;
-  done: (msg: string) => void;
-  log: (msg: string) => void;
-  warning: (msg: string) => void;
-
-  setStore: (key: string, value: any) => void;
-  getStore: (key: string) => any;
-  clearStore: (key?: string) => void;
-
-  setSecret: (key: string, value: string) => void;
-  getSecret: (key: string) => string | undefined;
-  clearSecret: (key?: string) => void;
-
-  namespace: (name: string) => NamespacedStore;
-  getNamespace: (name: string) => NamespacedStore | undefined;
-
-  setTemp: (key: string, value: any) => void;
-  getTemp: (key: string) => any;
-
-  http: HttpKit;
-  audit: AuditLog;
-
-  setStoreWithTTL: (key: string, value: any, ttlMs: number) => void;
-  setSecretWithTTL: (key: string, value: string, ttlMs: number) => void;
-
-  test: <T>(testName: string, testFn: () => T | Promise<T>) => Promise<T>;
-}
 
 export async function newLabs(
   name: string,

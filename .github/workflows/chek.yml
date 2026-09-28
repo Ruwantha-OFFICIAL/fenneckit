@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies 🥪
         run: npm install
 
-      - name: Test & check codes 🚧
+      - name: Test & check codes 🦾
         run: |
           npm run build
           npm run test

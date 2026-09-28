@@ -7,3 +7,9 @@ export {
   newLabs,
   testing
 } 
+export type {
+  TracedRequest,
+  HttpResponse,
+  RequestOptions,
+  AuditEntry
+} from "./types.ts";

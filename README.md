@@ -1,261 +1,374 @@
-# 🦊 FennecKit: Lab-Based Testing & Development Utility
+# 🦊 FennecKit
 
 ![logo](./fenneckit.png)
 
-```bash 
-npm install fenneckit@latest --save-dev
-npx fenneckit --help
+<div align="center">
+
+[![npm version](https://img.shields.io/npm/v/fenneckit?style=flat-square&color=3178c6&logo=npm)](https://www.npmjs.com/package/fenneckit)
+[![npm downloads](https://img.shields.io/npm/dm/fenneckit?style=flat-square&logo=npm)](https://www.npmjs.com/package/fenneckit)
+
+[![Node.js](https://img.shields.io/badge/node-%3E%3D16-green?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat-square)](LICENSE)
+
+[![Status](https://img.shields.io/badge/status-Stable-success?style=flat-square)](#)
+
+**Lab-Based Testing & Development Utility**
+
+Sequential Tests That Share Data • Zero Config • Encrypted Secrets • API Testing Kit
+
+[📖 Learn](#-what-is-fenneckit) • [⚡ Quick Start](#-quick-start) • [💡 Examples](#-real-world-example) • [🛠️ API](#-available-methods)
+
+</div>
+
+---
+
+## 🎯 The Problem FennecKit Solves
+
+### ❌ Problem: Jest/Vitest Tests Are Isolated
+
+```typescript
+// With Jest/Vitest:
+describe("User API", () => {
+  test("Create User", () => {
+    // Create user → returns userId
+  });
+
+  test("Get User", () => {
+    // ❌ How do we get the userId from the first test?
+    // We CAN'T! Every test starts fresh.
+  });
+});
 ```
 
-**English**: A Complete Storage + Security + API Testing System for Practical and Seamless Data Analysis
+**Result:** Complex workflows become impossible. You either:
+1. Mock everything (unrealistic)
+2. Duplicate data in each test (messy)
+3. Write separate test files (hard to maintain)
 
-**Zero Config** • Sequential Labs • Inter-Lab Data Sharing (within the same file) • Store Management • Encrypted Secrets • Namespaces • Audit Log • HTTP Testing Kit
+---
 
-**🦊Example** : soon
+### ✅ Solution: FennecKit Labs
+
+```typescript
+import { newLabs } from "fenneckit";
+
+await newLabs("User API", async (kit) => {
+  await kit.test("Create User", async () => {
+    const res = await kit.http.post("/users", { name: "John" });
+    
+    // ✅ Save userId for next test
+    kit.setStore("userId", res.data.id);
+    
+    kit.done("User created");
+  });
+
+  await kit.test("Get User", async () => {
+    // ✅ Access userId from previous test
+    const userId = kit.getStore("userId");
+    const res = await kit.http.get(`/users/${userId}`);
+    
+    kit.done("User retrieved");
+  });
+
+  await kit.test("Delete User", async () => {
+    // ✅ Still have access to userId
+    const userId = kit.getStore("userId");
+    await kit.http.delete(`/users/${userId}`);
+    
+    kit.done("User deleted");
+  });
+});
+```
+
+**Result:** Tests flow naturally, sharing data like real workflows! 🎉
 
 ---
 
 ## 🎯 What is FennecKit?
 
-FennecKit is a lightweight, **zero-config** testing & development utility built around the concept of **Labs**.
+FennecKit is a lightweight testing utility where:
 
-### What is a "Lab"?
+- **Lab** = A collection of sequential tests working toward one goal
+- **Tests** = Individual steps that execute one after another
+- **Storage** = Shared across all tests in the same Lab
+- **Zero Config** = No configuration files needed
 
-A **Lab** is a collection of sequential tasks (a workflow) that together accomplish one objective.
+### Real-World Labs
 
-**Examples**:
-- User Registration Lab → create user → validate → save to DB → send email
-- Payment Processing Lab → validate → charge → generate invoice
-- API Testing Lab → hit endpoints → verify responses → check side effects
+```
+🔬 Lab: User Registration Flow
+├─ Test 1: Validate Email
+├─ Test 2: Create User in DB
+├─ Test 3: Send Verification Email
+└─ Test 4: Verify Email Works
+
+🔬 Lab: Payment Processing
+├─ Test 1: Validate Card
+├─ Test 2: Charge Card
+├─ Test 3: Generate Invoice
+└─ Test 4: Send Receipt Email
+
+🔬 Lab: API Integration
+├─ Test 1: GET /users
+├─ Test 2: POST /orders
+├─ Test 3: GET /orders/{id}
+└─ Test 4: DELETE /orders/{id}
+```
+
+---
+
+## ⚡ Quick Start
+
+### 1️⃣ Install
+
+```bash
+npm install fenneckit@latest --save-dev
+```
+
+### 2️⃣ Create a Lab File
+
+Create `user.labs.js` in your project:
 
 ```typescript
-// Lab = Collection of sequential tasks
-await newLabs("User Registration Lab", async (kit) => {
-  await kit.test("Validate Email", async () => {
-    kit.done("Email validated");
+import { newLabs } from "fenneckit";
+
+await newLabs("User API Test", async (kit) => {
+  await kit.test("Step 1: Create User", async () => {
+    kit.setStore("userId", "usr_123");
+    kit.done("Stored user ID");
   });
 
-  await kit.test("Save to Database", async () => {
-    kit.done("User saved");
-  });
-
-  await kit.test("Send Verification Email", async () => {
-    kit.done("Email sent");
+  await kit.test("Step 2: Read User", async () => {
+    const userId = kit.getStore("userId");
+    kit.log(`Using user: ${userId}`);
+    kit.done("Retrieved user");
   });
 });
 ```
 
----
-
-## ⚡ Zero Config & Runner
-
-FennecKit requires **no configuration files**.
-
-### How to run
+### 3️⃣ Run
 
 ```bash
-# Run a specific lab file
-npx fenneckit lab.js
-
-# Or just
+# Auto-discover and run all .labs.js files
 npx fenneckit
 
-# The runner automatically finds all *.labs.js / *.labs.ts files
-# and executes them one after another (sequentially)
+# Or run a specific file
+npx fenneckit user.labs.js
 ```
-
-**What the runner does**:
-1. Discovers lab files in the current directory (and subdirectories if configured)
-2. Runs each file **one by one**
-3. Inside each file, Labs run in the order they are written
-4. Generates a report (`fenneckit.md`) after execution
-
-> **Important limitation**  
-> Data sharing (`setStore` / `getStore` / secrets / namespaces) only works **inside the same file**.  
-> Different lab files **cannot** share STORE, TEMP, Secrets or Namespaces with each other.
 
 ---
 
-## 🌳 Data Sharing Hierarchy (Tree Structure)
+## 🗂️ Understanding Storage (The Core Concept)
 
-```
-📁 FennecKit Execution
-│
-├─ 📄 file1.labs.js (STORE Instance #1 + SecretVault + Namespaces)
-│  │
-│  ├─ 🔬 Lab 1 (User Registration)
-│  │  ├─ 📝 Test 1: Create User
-│  │  │  ├─ STORE: {"userId": "123"} ✅ Shared with Lab 2
-│  │  │  ├─ SECRET: encrypted token ✅ Shared with Lab 2
-│  │  │  ├─ NAMESPACE "user": {...} ✅ Shared with Lab 2
-│  │  │  └─ TEMP: {"token": "abc"} ❌ Only here
-│  │  │
-│  │  └─ 📝 Test 2: Send Email
-│  │     └─ Can access STORE / SECRET / Namespaces from Test 1
-│  │
-│  ├─ 🔬 Lab 2 (Authentication)
-│  │  ├─ 📝 Test 1: Generate Token
-│  │  │  ├─ STORE: {"userId": "123"} ✅ From Lab 1
-│  │  │  ├─ SECRET / Namespace ✅ From Lab 1
-│  │  │  └─ TEMP: {"token": "new"} ❌ Only here
-│  │  │
-│  │  └─ 📝 Test 2: Verify Token
-│  │     └─ Can access STORE / SECRET / Namespaces from Labs 1 & 2
-│  │
-│  └─ 🔬 Lab 3 (Cleanup)
-│     └─ File STORE + Secrets + Namespaces cleared when execution ends
-│
-├─ 📄 file2.labs.js (Completely ISOLATED)
-│  └─ ❌ CANNOT access anything from file1.labs.js
-│
-└─ 📄 file3.labs.js (Completely ISOLATED)
-   └─ ❌ Isolated from all other files
-```
+FennecKit has **4 storage levels**, each with different purposes:
 
-### Understanding the Hierarchy
-
-**🔴 Level 1: Different Files = NO Data Sharing**  
-Each file gets its own isolated STORE, SecretVault and Namespaces.
-
-**🟡 Level 2: Same File, Different Labs = STORE + Secrets + Namespaces Sharing**  
-Data set in Lab 1 is available in Lab 2, Lab 3, etc. (until cleared).
-
-**🟢 Level 3: Same Lab, Different Tests = STORE + TEMP + Secrets + Namespaces Sharing**  
-TEMP is automatically cleared when the Lab ends. Everything else remains.
-
----
-
-## 🔗 Data Communication Between Labs (Inter-Lab Communication)
-
-### The Problem with Jest / Vitest
-
-In Jest and Vitest every test is isolated. You cannot pass data from one test to another.
-
-### FennecKit Solution – Storage Levels (v1.2.0)
+### 📊 Storage Comparison
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│         FennecKit Storage System (Per File)                 │
+│  STORAGE LEVEL       │ USE FOR              │ CLEARED WHEN     │
 ├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  LEVEL 1: FILE SCOPE                                        │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ STORE (Global - Persistent within file)              │  │
-│  │ ├─ Shared across ALL Labs in this file               │  │
-│  │ ├─ Available until file execution ends               │  │
-│  │ ├─ Can be manually cleared with clearStore()         │  │
-│  │ └─ Example: userId, orderData, status                │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  LEVEL 2: ENCRYPTED SECRETS (AES-256-GCM)                   │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ SECRET VAULT                                         │  │
-│  │ ├─ Encrypted at rest inside the process              │  │
-│  │ ├─ Shared across Labs in the same file               │  │
-│  │ ├─ setSecret / getSecret / clearSecret               │  │
-│  │ └─ Example: auth tokens, API keys, passwords         │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  LEVEL 3: NAMESPACES                                        │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ kit.namespace("user") / kit.namespace("order")       │  │
-│  │ ├─ Isolated key-value stores                         │  │
-│  │ ├─ Shared across Labs in the same file               │  │
-│  │ └─ Perfect for grouping related data                 │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  LEVEL 4: LAB-LOCAL SCOPE                                   │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ TEMP (Local - Auto-Cleaned)                          │  │
-│  │ ├─ Only available inside current Lab                 │  │
-│  │ ├─ Automatically cleared when Lab ends               │  │
-│  │ └─ Example: timestamps, temp calculations            │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
+│  🟢 STORE            │ User IDs, Order IDs   │ File ends        │
+│  🔐 SECRET           │ Tokens, Passwords     │ File ends        │
+│  🗂️ NAMESPACE        │ Grouped data          │ File ends        │
+│  ⏱️ TEMP             │ Temporary values      │ Test/lab ends    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔐 NEW in v1.2.0: Secret Vault (AES-256-GCM)
+## 🟢 Level 1: STORE (Shared Persistent Data)
 
-Sensitive data should never live in plain STORE.
+Use STORE to save data that all tests need:
 
 ```typescript
-await newLabs("Auth Lab", async (kit) => {
-  await kit.test("Login", async () => {
-    // Encrypted storage
-    kit.setSecret("accessToken", "eyJhbGciOiJIUzI1NiIs...");
-    kit.setSecret("refreshToken", "rt_abc123");
+await newLabs("E-Commerce", async (kit) => {
+  // Test 1: Create User
+  await kit.test("Create User", async () => {
+    const res = await kit.http.post("/users", {
+      name: "Alice",
+      email: "alice@example.com"
+    });
 
-    kit.done("Tokens stored securely");
+    // ✅ Save for other tests
+    kit.setStore("userId", res.data.id);
+    kit.setStore("email", res.data.email);
+
+    kit.done("User created");
+  });
+
+  // Test 2: Create Order (uses userId from Test 1)
+  await kit.test("Create Order", async () => {
+    const userId = kit.getStore("userId"); // ← Get from previous test
+    
+    const res = await kit.http.post("/orders", {
+      userId: userId,
+      items: [{ productId: "prod_1", qty: 2 }]
+    });
+
+    kit.setStore("orderId", res.data.id); // ← Save for next test
+
+    kit.done("Order created");
+  });
+
+  // Test 3: Get Order (uses orderId from Test 2)
+  await kit.test("Verify Order", async () => {
+    const orderId = kit.getStore("orderId"); // ← Get from previous test
+    
+    const res = await kit.http.get(`/orders/${orderId}`);
+    
+    if (res.status === 200) {
+      kit.done("Order verified");
+    } else {
+      kit.err("Order verification failed");
+    }
+  });
+});
+```
+
+**Key Points:**
+- `kit.setStore(key, value)` → Save data
+- `kit.getStore(key)` → Read data
+- `kit.clearStore(key)` → Delete data
+- Data persists until file ends
+
+---
+
+## 🔐 Level 2: SECRET (Encrypted Storage)
+
+Never store passwords or tokens in plain STORE! Use SECRET instead:
+
+```typescript
+await newLabs("Authentication", async (kit) => {
+  await kit.test("Login", async () => {
+    const res = await kit.http.post("/login", {
+      username: "john",
+      password: "secure123"
+    });
+
+    // ❌ WRONG:
+    // kit.setStore("token", res.data.accessToken);
+
+    // ✅ CORRECT: Use SECRET for sensitive data
+    kit.setSecret("accessToken", res.data.accessToken);
+    kit.setSecret("refreshToken", res.data.refreshToken);
+
+    kit.done("Logged in");
   });
 
   await kit.test("Use Token", async () => {
-    const token = kit.getSecret("accessToken"); // decrypted on the fly
+    // ✅ Automatically decrypted when you read it
+    const token = kit.getSecret("accessToken");
+    
+    // Use token for requests
     kit.http.setAuth("bearer", token!);
-    kit.done("Token retrieved");
+    
+    const res = await kit.http.get("/profile");
+    kit.done("Retrieved profile");
   });
 
   await kit.test("Cleanup", async () => {
-    kit.clearSecret("accessToken");     // remove one key
-    // kit.clearSecret();               // clear entire vault
+    // ✅ Remove sensitive data when done
+    kit.clearSecret("accessToken");
+    kit.clearSecret("refreshToken");
+    
     kit.done("Secrets cleared");
   });
 });
 ```
 
-**TTL Support for Secrets**
-```typescript
-kit.setSecretWithTTL("tempToken", "abc123", 30_000); // auto-delete after 30s
-```
+**Why SECRET?**
+- ✅ Encrypted at rest (AES-256-GCM)
+- ✅ Never logged in plain text
+- ✅ Safe for CI/CD pipelines
+- ✅ Audit trail of all access
 
 ---
 
-## 🗂️ NEW in v1.2.0: Namespaced Store
+## 🗂️ Level 3: NAMESPACE (Organized Groups)
 
-Organize data into logical groups.
+Group related data by namespace instead of scattered keys:
 
 ```typescript
-await newLabs("E-Commerce Flow", async (kit) => {
+await newLabs("Multi-Entity Data", async (kit) => {
+  // Create namespaces for different entities
   const user = kit.namespace("user");
   const order = kit.namespace("order");
-  const cart = kit.namespace("cart");
+  const payment = kit.namespace("payment");
 
-  await kit.test("Register", async () => {
+  await kit.test("Populate Namespaces", async () => {
+    // User namespace
     user.set("id", "usr_123");
-    user.set("email", "john@example.com");
-    kit.done("User namespace populated");
-  });
+    user.set("name", "Alice");
+    user.set("email", "alice@example.com");
 
-  await kit.test("Create Order", async () => {
+    // Order namespace
     order.set("id", "ord_456");
     order.set("total", 299.99);
-    kit.done("Order namespace populated");
+    order.set("status", "pending");
+
+    // Payment namespace
+    payment.set("cardId", "card_789");
+    payment.set("method", "credit_card");
+
+    kit.done("Namespaces populated");
   });
 
-  await kit.test("Read Later", async () => {
-    const userId = kit.getNamespace("user")?.get("id"); // "usr_123"
-    const total  = order.get("total");                  // 299.99
-    kit.done(`User ${userId} ordered ${total}`);
+  await kit.test("Read from Namespaces", async () => {
+    // Clean, organized access
+    const userName = user.get("name");
+    const orderTotal = order.get("total");
+    const paymentMethod = payment.get("method");
+
+    kit.log(`${userName} ordered $${orderTotal} using ${paymentMethod}`);
+    kit.done("Data organized");
   });
+});
+```
+
+**Benefits:**
+- ✅ Clear data organization
+- ✅ No key name conflicts
+- ✅ Easy to understand relationships
+- ✅ Better for large workflows
+
+---
+
+## ⏱️ Level 4: TEMP (Lab-Local Temporary Data)
+
+Use TEMP for data that's only needed within one test. It's automatically cleared after each test:
+
+```typescript
+await kit.test("Measure Performance", async () => {
+  // Store start time in TEMP
+  kit.setTemp("startTime", Date.now());
+
+  // Simulate work
+  await kit.http.get("/api/heavy-endpoint");
+
+  // Calculate elapsed time
+  const elapsed = Date.now() - kit.getTemp("startTime");
+  kit.log(`Request took ${elapsed}ms`);
+
+  // ✅ TEMP is automatically cleared when test ends
+  // Next test won't have access to this data
+  kit.done("Performance test complete");
 });
 ```
 
 ---
 
-## 📡 NEW in v1.2.0: HTTP Kit (API Testing)
+## 📡 HTTP Kit (Built-in API Testing)
 
-Built-in HTTP client with auth, retries, history and tracing.
+FennecKit has a built-in HTTP client with auth, retry, and history tracking:
 
 ```typescript
 await newLabs("API Smoke Test", async (kit) => {
-  // Set auth once
-  kit.http.setAuth("bearer", "your-token");
-  // or kit.http.setAuth("basic", "base64creds");
-  // or kit.http.setAuth("api-key", "key123");
+  // Set auth once for all requests
+  kit.http.setAuth("bearer", "your-api-token-here");
 
-  await kit.test("GET Users", async () => {
+  await kit.test("GET Endpoint", async () => {
     const res = await kit.http.get("https://api.example.com/users", {
       timeout: 5000,
       retry: { max: 3, delay: 1000 }
@@ -265,261 +378,418 @@ await newLabs("API Smoke Test", async (kit) => {
       kit.err(`Expected 200, got ${res.status}`);
     }
 
-    kit.setStore("users", res.data);
+    kit.setStore("userCount", res.data.length);
     kit.done(`Fetched ${res.data.length} users`);
   });
 
-  await kit.test("POST Order", async () => {
+  await kit.test("POST Endpoint", async () => {
     const res = await kit.http.post("https://api.example.com/orders", {
       productId: "prod_1",
-      qty: 2
+      quantity: 2
     });
 
+    kit.setStore("orderId", res.data.id);
     kit.done(`Order created: ${res.data.id}`);
   });
 
-  // Inspect request history
-  await kit.test("Check History", async () => {
+  await kit.test("Check Request History", async () => {
+    const history = kit.http.getRequestHistory();
     const last = kit.http.getLastRequest();
+
+    kit.log(`Total requests: ${history.length}`);
     kit.log(`Last request took ${last?.duration}ms`);
+    kit.done("History checked");
   });
 });
 ```
 
-**Available methods**:
-- `kit.http.get / post / put / patch / delete`
-- `kit.http.setAuth(type, credentials)` / `clearAuth()`
-- `kit.http.getRequestHistory()` / `getLastRequest()` / `clearHistory()`
+**HTTP Methods:**
+- `kit.http.get(url, options)`
+- `kit.http.post(url, body, options)`
+- `kit.http.put(url, body, options)`
+- `kit.http.patch(url, body, options)`
+- `kit.http.delete(url, options)`
+
+**Auth Methods:**
+- `kit.http.setAuth("bearer", token)`
+- `kit.http.setAuth("basic", credentials)`
+- `kit.http.setAuth("api-key", key)`
+- `kit.http.clearAuth()`
 
 ---
 
-## 📋 NEW in v1.2.0: Audit Log
+## 📋 Audit Log (Track Everything)
 
-Every STORE / SECRET operation is automatically recorded.
+Every operation on STORE and SECRET is automatically logged:
 
 ```typescript
 await newLabs("Audit Demo", async (kit) => {
-  await kit.test("Operations", async () => {
+  await kit.test("Do Stuff", async () => {
     kit.setStore("userId", "123");
     kit.setSecret("token", "secret");
     kit.getStore("userId");
+    kit.clearStore("userId");
   });
 
-  await kit.test("Inspect Audit", async () => {
+  await kit.test("Review Audit", async () => {
+    // Get last 5 operations
     const last5 = kit.audit.getLast(5);
-    const byKey = kit.audit.filterByKey("token");
-    const json  = kit.audit.export("json");
-    const csv   = kit.audit.export("csv");
 
-    kit.log(`Recorded ${last5.length} operations`);
+    // Find all operations on "token" key
+    const tokenOps = kit.audit.filterByKey("token");
+
+    // Export as JSON or CSV
+    const json = kit.audit.export("json");
+    const csv = kit.audit.export("csv");
+
+    kit.log(`${last5.length} operations recorded`);
+    kit.done("Audit reviewed");
   });
+});
+```
+
+**Perfect for:**
+- 🔍 Debugging complex workflows
+- ✅ Compliance & audit trails
+- 📊 Performance analysis
+- 🔐 Security investigations
+
+---
+
+## ⏰ TTL (Time-To-Live)
+
+Auto-expire data after a certain time:
+
+```typescript
+await kit.test("Session Expiry", async () => {
+  // This data expires after 30 seconds
+  kit.setStoreWithTTL("sessionId", "sess_123", 30_000);
+  
+  // This secret expires after 60 seconds
+  kit.setSecretWithTTL("tempToken", "token", 60_000);
+
+  kit.done("Data with TTL set");
 });
 ```
 
 ---
 
-## 🧹 clearStore() & clearSecret()
+## 🛠️ Available Methods
 
+### Testing & Flow Control
 ```typescript
-// Clear specific key
-kit.clearStore("authToken");
-kit.clearSecret("accessToken");
+// Tests
+await kit.test(name, async () => { ... })  // Run a test
+kit.done(msg)                              // Test passed
+kit.err(msg)                               // Test failed (stop lab)
+kit.flatErr(msg)                           // Test failed (continue)
+kit.log(msg)                               // Log message
+kit.warning(msg)                           // Log warning
 
-// Clear everything
-kit.clearStore();
-kit.clearSecret();
+// Flow
+kit.out()                                  // Exit lab immediately
+kit.ret()                                  // Restart lab (max 3x)
+```
+
+### STORE (Persistent Data)
+```typescript
+kit.setStore(key, value)                   // Save data
+kit.getStore(key)                          // Read data
+kit.clearStore(key)                        // Clear specific key
+kit.clearStore()                           // Clear all
+kit.setStoreWithTTL(key, value, ms)        // Save with expiry
+```
+
+### SECRET (Encrypted Data)
+```typescript
+kit.setSecret(key, value)                  // Save securely
+kit.getSecret(key)                         // Read securely
+kit.clearSecret(key)                       // Clear specific
+kit.clearSecret()                          // Clear all
+kit.setSecretWithTTL(key, value, ms)       // Save with expiry
+```
+
+### NAMESPACE (Grouped Data)
+```typescript
+const ns = kit.namespace(name)             // Create/get namespace
+ns.set(key, value)                         // Save to namespace
+ns.get(key)                                // Read from namespace
+kit.getNamespace(name)                     // Get existing namespace
+```
+
+### TEMP (Lab-Local Data)
+```typescript
+kit.setTemp(key, value)                    // Save temp data
+kit.getTemp(key)                           // Read temp data
+// Automatically cleared when test ends
+```
+
+### HTTP
+```typescript
+kit.http.get/post/put/patch/delete(url, options)
+kit.http.setAuth(type, credentials)
+kit.http.clearAuth()
+kit.http.getRequestHistory()
+kit.http.getLastRequest()
+kit.http.clearHistory()
+```
+
+### Audit Log
+```typescript
+kit.audit.getLast(count)                   // Get recent operations
+kit.audit.filterByKey(key)                 // Find by key
+kit.audit.export("json" | "csv")           // Export audit trail
 ```
 
 ---
 
-## ⏰ TTL Support (Time-To-Live)
-
-```typescript
-// Auto-expire after 10 seconds
-kit.setStoreWithTTL("sessionId", "sess_abc", 10_000);
-kit.setSecretWithTTL("tempKey", "value", 30_000);
-```
-
----
-
-## 🛠️ LabContext Methods (v1.2.0)
-
-```typescript
-interface LabContext {
-  // Testing & Flow
-  test(name: string, fn: () => Promise<any>): Promise<any>
-  done(msg: string): void
-  err(msg: string): void          // stops the Lab
-  flatErr(msg: string): void      // continues
-  log(msg: string): void
-  warning(msg: string): void
-
-  // Flow control
-  out(): void                     // exit Lab immediately
-  ret(): void                     // restart Lab (max 3 times)
-
-  // Persistent STORE
-  setStore(key: string, value: any): void
-  getStore(key: string): any
-  clearStore(key?: string): void
-  setStoreWithTTL(key: string, value: any, ttlMs: number): void
-
-  // Encrypted Secrets (AES-256-GCM)
-  setSecret(key: string, value: string): void
-  getSecret(key: string): string | undefined
-  clearSecret(key?: string): void
-  setSecretWithTTL(key: string, value: string, ttlMs: number): void
-
-  // Namespaces
-  namespace(name: string): NamespacedStore
-  getNamespace(name: string): NamespacedStore | undefined
-
-  // Temporary (Lab-local only)
-  setTemp(key: string, value: any): void
-  getTemp(key: string): any
-
-  // HTTP Kit
-  http: HttpKit
-
-  // Audit Log
-  audit: AuditLog
-}
-```
-
----
-
-## 💡 Real-World Example (v1.2.0)
+## 💡 Real-World Example
 
 ```typescript
 import { newLabs } from "fenneckit";
 
-await newLabs("E-Commerce API Test", async (kit) => {
-  const user  = kit.namespace("user");
+await newLabs("Complete E-Commerce Flow", async (kit) => {
+  const user = kit.namespace("user");
   const order = kit.namespace("order");
 
+  // Step 1: Register User
   await kit.test("Register User", async () => {
     const res = await kit.http.post("https://api.shop.com/auth/register", {
       email: "test@example.com",
-      password: "secure123"
+      password: "secure123",
+      name: "John Doe"
     });
 
-    user.set("id", res.data.id);
-    kit.setSecret("token", res.data.token);          // encrypted
+    if (res.status !== 201) {
+      kit.err("User registration failed");
+    }
+
+    // Store user data
+    user.set("id", res.data.userId);
+    user.set("email", res.data.email);
+
+    // Store token securely
+    kit.setSecret("accessToken", res.data.token);
     kit.http.setAuth("bearer", res.data.token);
 
-    kit.done("User registered");
+    kit.done("User registered successfully");
   });
 
+  // Step 2: Create Order
   await kit.test("Create Order", async () => {
+    const userId = user.get("id");
+
     const res = await kit.http.post("https://api.shop.com/orders", {
-      items: [{ id: "prod_1", qty: 2 }]
+      userId: userId,
+      items: [
+        { productId: "prod_laptop", quantity: 1, price: 999.99 },
+        { productId: "prod_mouse", quantity: 2, price: 29.99 }
+      ]
     });
+
+    if (res.status !== 201) {
+      kit.err("Order creation failed");
+    }
 
     order.set("id", res.data.orderId);
     order.set("total", res.data.total);
+    order.set("status", "pending");
+
     kit.done(`Order created: ${res.data.orderId}`);
   });
 
-  await kit.test("Security Cleanup", async () => {
-    kit.clearSecret("token");                        // remove sensitive data
-    kit.done("Secrets cleared");
+  // Step 3: Process Payment
+  await kit.test("Process Payment", async () => {
+    const orderId = order.get("id");
+    const total = order.get("total");
+
+    const res = await kit.http.post("https://api.shop.com/payments", {
+      orderId: orderId,
+      amount: total,
+      method: "credit_card",
+      cardToken: "tok_visa_123"
+    });
+
+    if (res.status !== 200 || !res.data.success) {
+      kit.err("Payment failed");
+    }
+
+    kit.setStore("paymentId", res.data.transactionId);
+    order.set("status", "paid");
+
+    kit.done("Payment processed");
   });
 
-  await kit.test("Audit Check", async () => {
-    const log = kit.audit.getLast(10);
-    kit.log(`Audit entries: ${log.length}`);
+  // Step 4: Verify Order
+  await kit.test("Verify Order", async () => {
+    const orderId = order.get("id");
+
+    const res = await kit.http.get(`https://api.shop.com/orders/${orderId}`);
+
+    if (res.status !== 200) {
+      kit.err("Order not found");
+    }
+
+    if (res.data.status !== "paid") {
+      kit.flatErr("Order status mismatch");
+    }
+
+    kit.done("Order verified successfully");
+  });
+
+  // Step 5: Send Confirmation Email
+  await kit.test("Send Confirmation", async () => {
+    const email = user.get("email");
+    const orderId = order.get("id");
+
+    const res = await kit.http.post(
+      "https://api.shop.com/emails/send",
+      {
+        to: email,
+        subject: "Order Confirmation",
+        orderId: orderId
+      }
+    );
+
+    if (res.status !== 200) {
+      kit.flatErr("Email send failed (non-blocking)");
+    } else {
+      kit.done("Confirmation email sent");
+    }
+  });
+
+  // Step 6: Cleanup
+  await kit.test("Security Cleanup", async () => {
+    kit.clearSecret("accessToken");
+    kit.http.clearAuth();
+
+    // Check audit log
+    const audit = kit.audit.getLast(10);
+    kit.log(`${audit.length} operations in audit log`);
+
+    kit.done("Cleanup complete");
   });
 });
 ```
 
----
-
-## 📊 Storage Lifecycle (per file)
-
+**Output:**
 ```
-FILE EXECUTION START
-│
-├─ Lab 1
-│  ├─ setStore / setSecret / namespace.set → kept across Labs
-│  ├─ setTemp → kept only for this Lab
-│  ├─ clearStore / clearSecret → optional cleanup
-│  └─ Lab ends → TEMP cleared, everything else remains
-│
-├─ Lab 2
-│  ├─ getStore / getSecret / namespace.get → works
-│  └─ Lab ends → TEMP cleared
-│
-└─ FILE END → STORE + Secrets + Namespaces completely cleared
+✅ Register User → User registered successfully
+✅ Create Order → Order created: ord_12345
+✅ Process Payment → Payment processed
+✅ Verify Order → Order verified successfully
+✅ Send Confirmation → Confirmation email sent
+✅ Security Cleanup → Cleanup complete
+
+🎉 Lab: Complete E-Commerce Flow → PASSED
 ```
 
 ---
 
-## 🎯 Best Practices (v1.2.0)
+## 📊 Data Sharing Rules
 
-1. **Secrets always go into the Vault**
-   ```typescript
-   kit.setSecret("token", token);   // ✅
-   kit.setStore("token", token);    // ❌ avoid
-   ```
+### ✅ Shared Across Tests in Same File?
 
-2. **Use namespaces for related data**
-   ```typescript
-   const user = kit.namespace("user");
-   user.set("id", id);
-   user.set("email", email);
-   ```
+| Storage | Test 1 → Test 2 | File 1 → File 2 |
+|---------|-----------------|-----------------|
+| STORE | ✅ Yes | ❌ No |
+| SECRET | ✅ Yes | ❌ No |
+| NAMESPACE | ✅ Yes | ❌ No |
+| TEMP | ❌ No | ❌ No |
 
-3. **Clear sensitive data when no longer needed**
-   ```typescript
-   kit.clearSecret("accessToken");
-   kit.clearStore("creditCard");
-   ```
-
-4. **Check before use**
-   ```typescript
-   const token = kit.getSecret("token");
-   if (!token) kit.err("Token missing!");
-   ```
-
-5. **Never rely on cross-file sharing** – write to disk/DB if needed.
+**Key Rule:** Each `.labs.js` file gets its own isolated storage.
 
 ---
 
-## 🎨 Color / Status Legend
+## 🎯 Best Practices
 
-- `✅` / `🟢` Success  
-- `❌` / `🔴` Failed (Lab continues)  
-- `🛑` Error (Lab stops)  
-- `⚠️` / `🟡` Warning  
-- `📝` / `⚪` Info  
-- `⚙️` Store operation  
-- `🔐` Secret operation  
-- `⏱️` Temp operation  
-- `🧹` Clear operation  
-- `⏰` TTL expiration  
+### ✅ 1. Use STORE for Regular Data
+```typescript
+kit.setStore("userId", "123");           // ✅ Good
+kit.setStore("userName", "Alice");       // ✅ Good
+```
+
+### ✅ 2. Use SECRET for Sensitive Data
+```typescript
+kit.setSecret("accessToken", token);     // ✅ Good
+kit.setSecret("refreshToken", refresh);  // ✅ Good
+kit.setStore("accessToken", token);      // ❌ Wrong!
+```
+
+### ✅ 3. Use NAMESPACE for Organization
+```typescript
+const user = kit.namespace("user");
+user.set("id", id);
+user.set("email", email);
+// NOT:
+// kit.setStore("userId", id);
+// kit.setStore("userEmail", email);
+```
+
+### ✅ 4. Check Before Using
+```typescript
+const token = kit.getSecret("token");
+if (!token) {
+  kit.err("Token is missing!");
+}
+```
+
+### ✅ 5. Clean Up Secrets
+```typescript
+await kit.test("Final", async () => {
+  kit.clearSecret("accessToken");
+  kit.clearSecret("refreshToken");
+  kit.done("Secrets cleared");
+});
+```
+
+### ✅ 6. Use Audit for Compliance
+```typescript
+const audit = kit.audit.export("json");
+console.log(audit); // For compliance or debugging
+```
 
 ---
 
 ## 💪 Perfect For
 
-- Backend API testing (Express, Fastify, NestJS, etc.)
-- Security-conscious test flows (tokens, keys)
-- Database migration validation
-- Microservice chaining
-- Pre-deployment smoke checks
-- State management + audit trails
-- Data pipeline validation
+| Scenario | Why FennecKit? |
+|----------|----------------|
+| 🔌 **API Testing** | Tests share data, workflow is natural |
+| 🔐 **Security Tests** | Built-in encryption for secrets |
+| 📚 **Database Migration** | Validate data flows step-by-step |
+| 🔗 **Microservices** | Chain service calls naturally |
+| 🚀 **Pre-deployment** | Smoke testing with real state |
+| 📊 **Data Pipelines** | Validate ETL workflows |
+| 🧪 **Integration Tests** | Multi-step complex scenarios |
+
+---
+
+## 🚀 Features at a Glance
+
+| Feature | What It Does |
+|---------|-------------|
+| 🔬 **Labs** | Group related tests into workflows |
+| 📦 **STORE** | Persistent data across tests |
+| 🔐 **SECRET** | Encrypted storage for sensitive data |
+| 🗂️ **NAMESPACE** | Organize data by entity |
+| ⏱️ **TEMP** | Lab-local temporary data |
+| 📡 **HTTP Kit** | Built-in API testing client |
+| 📋 **Audit Log** | Track all data operations |
+| ⏰ **TTL** | Auto-expire data after time |
+| 🔄 **Retries** | Built-in HTTP retry logic |
+| 📊 **Export** | Audit log to JSON/CSV |
 
 ---
 
 ## 📝 Version History
 
 ### v1.2.0 (Current)
-- 🔐 **Secret Vault** – AES-256-GCM encryption
-- 🗂️ **Namespaced Store**
-- 📋 **Audit Log** (JSON / CSV export)
-- 📡 **HTTP Kit** with auth, retry, history
-- ⏰ **TTL support** for STORE & Secrets
+- 🔐 Secret Vault (AES-256-GCM encryption)
+- 🗂️ Namespaced Store
+- 📋 Audit Log (JSON/CSV export)
+- 📡 HTTP Kit with auth & retry
+- ⏰ TTL support for STORE & Secrets
 - Improved LabContext API
 
 ### v1.1.0
@@ -528,7 +798,7 @@ FILE EXECUTION START
 
 ### v1.0.0
 - Core Lab functionality
-- STORE & TEMP storage
+- Basic STORE & TEMP storage
 - Zero config runner
 - Report generation
 
@@ -536,7 +806,8 @@ FILE EXECUTION START
 
 ## 📝 License
 
-**Copyright © 2026 Lasith Ruwantha Amrwansha**  
+**Copyright © 2026 Lasith Ruwantha Amrwansha**
+
 Written: 2026/09/17  
 Updated: 2026/09/21  
 Author: Ruwantha Amrwansha  
@@ -544,4 +815,10 @@ Library: FennecKit 🦊
 
 ---
 
+<div align="center">
+
 **Happy Testing! 🦊⚡**
+
+Made with ❤️ for developers who want simpler, more natural testing
+
+</div>
