@@ -8,4 +8,5 @@
 
 ## V1.2.1 [2026/09/27]
 - clean guides
-- easy to learning 
+- easy to learning
+- ads docs 
