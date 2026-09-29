@@ -19,8 +19,7 @@ import type {
   TracedRequest,
   HttpResponse,
   RequestOptions,
-  AuditEntry,
-  LabContext
+  AuditEntry
 } from "../types.js"
 
 /*===========================
@@ -212,7 +211,37 @@ class AuditLog {
   }
 }
 
+interface LabContext {
+  out: () => void;
+  ret: () => void;
+  flatErr: (msg: string) => void;
+  err: (msg: string) => void;
+  done: (msg: string) => void;
+  log: (msg: string) => void;
+  warning: (msg: string) => void;
 
+  setStore: (key: string, value: any) => void;
+  getStore: (key: string) => any;
+  clearStore: (key?: string) => void;
+
+  setSecret: (key: string, value: string) => void;
+  getSecret: (key: string) => string | undefined;
+  clearSecret: (key?: string) => void;
+
+  namespace: (name: string) => NamespacedStore;
+  getNamespace: (name: string) => NamespacedStore | undefined;
+
+  setTemp: (key: string, value: any) => void;
+  getTemp: (key: string) => any;
+
+  http: HttpKit;
+  audit: AuditLog;
+
+  setStoreWithTTL: (key: string, value: any, ttlMs: number) => void;
+  setSecretWithTTL: (key: string, value: string, ttlMs: number) => void;
+
+  test: <T>(testName: string, testFn: () => T | Promise<T>) => Promise<T>;
+}
 
 class HttpKit {
   private authHeader: { type: string; value: string } | null = null;
